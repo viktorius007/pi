@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import { existsSync, mkdirSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DefaultPackageManager, type ProgressEvent, type ResolvedResource } from "../src/core/package-manager.ts";
@@ -171,6 +171,23 @@ Content`,
 			const result = await packageManager.resolve();
 			// Skills with SKILL.md are returned as file paths
 			expect(result.skills.some((r) => r.path === skillFile && r.enabled)).toBe(true);
+		});
+
+		it("should not collect skills nested more than one level deep", async () => {
+			const shallow = join(agentDir, "skills", "shallow-skill", "SKILL.md");
+			const deep = join(agentDir, "skills", "level-one", "deep-skill", "SKILL.md");
+			for (const [file, name] of [
+				[shallow, "shallow-skill"],
+				[deep, "deep-skill"],
+			] as const) {
+				mkdirSync(dirname(file), { recursive: true });
+				writeFileSync(file, `---\nname: ${name}\ndescription: A ${name} fixture\n---\nContent`);
+			}
+
+			const result = await packageManager.resolve();
+			const paths = result.skills.map((r) => r.path);
+			expect(paths).toContain(shallow);
+			expect(paths).not.toContain(deep);
 		});
 
 		it("should auto-discover root markdown skills from .pi skill dirs", async () => {

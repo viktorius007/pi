@@ -105,6 +105,17 @@ describe("skills", () => {
 			expect(diagnostics).toHaveLength(0);
 		});
 
+		it("should not load skills nested more than one level deep", () => {
+			const { skills, diagnostics } = loadSkillsFromDir({
+				dir: join(fixturesDir, "too-deep"),
+				source: "test",
+			});
+
+			// A skill's own subdirectories are resources, so a deeper SKILL.md is content, not a skill.
+			expect(skills.map((skill) => skill.name)).toEqual(["shallow-skill"]);
+			expect(diagnostics).toHaveLength(0);
+		});
+
 		it("should prefer a directory's root SKILL.md over nested SKILL.md files", () => {
 			const { skills, diagnostics } = loadSkillsFromDir({
 				dir: join(fixturesDir, "root-skill-preferred"),
