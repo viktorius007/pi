@@ -56,7 +56,7 @@ Set `disable-model-invocation: true` in frontmatter when a skill should be avail
 
 ## Add it to Pi
 
-Place the skill in your user or project skills directory. Directories containing `SKILL.md` are discovered recursively.
+Place the skill in your user or project skills directory. The direct subdirectories of a skills directory are scanned for `SKILL.md`; a skill's own subdirectories are its resources, so a `SKILL.md` nested deeper inside a skill is not itself a skill.
 
 Pi also supports the Agent Skills locations `~/.agents/skills/` and `.agents/skills/`. Project `.agents/skills/` directories are discovered from the working directory through its ancestors, stopping at the repository root when one exists.
 
