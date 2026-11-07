@@ -54,6 +54,7 @@ import { stripBom } from "../utils/text.ts";
 import { isStdoutTakenOver } from "./output-guard.ts";
 import { type PiManifest, readPiManifest } from "./pi-manifest.ts";
 import type { PackageSource, SettingsManager } from "./settings-manager.ts";
+import { MAX_SKILL_SCAN_DEPTH } from "./skills.ts";
 import { BUILTIN_PATH_PREFIX, getResourcePathKey } from "./source-info.ts";
 
 const NETWORK_TIMEOUT_MS = 10000;
@@ -418,6 +419,8 @@ function collectSkillEntries(
 
 	const root = rootDir ?? dir;
 	const ig = ignoreMatcher ?? ignore();
+	// Depth of the directory currently being scanned, counted from the skills root.
+	const dirDepth = toPosixPath(relative(root, dir)).split("/").filter(Boolean).length;
 	addIgnoreRules(ig, dir, root);
 
 	try {
@@ -440,7 +443,11 @@ function collectSkillEntries(
 
 			const relPath = toPosixPath(relative(root, fullPath));
 			if (isFile && !ig.ignores(relPath)) {
-				entries.push(fullPath);
+				// A deeper SKILL.md is a resource, not a skill. The walk continues only so bare
+				// .agents markdown skills are still found.
+				if (dirDepth <= MAX_SKILL_SCAN_DEPTH) {
+					entries.push(fullPath);
+				}
 				return entries;
 			}
 		}

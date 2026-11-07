@@ -15,6 +15,12 @@ const MAX_DESCRIPTION_LENGTH = 1024;
 
 const IGNORE_FILE_NAMES = [".gitignore", ".ignore", ".fdignore"];
 
+/**
+ * How deep a skills root's children may register as skills. A skill's own subdirectories
+ * (scripts/, references/, assets/) are resources, so a deeper SKILL.md is content, not a skill.
+ */
+export const MAX_SKILL_SCAN_DEPTH = 1;
+
 type IgnoreMatcher = ReturnType<typeof ignore>;
 
 function toPosixPath(p: string): string {
@@ -163,7 +169,7 @@ function createSkillSourceInfo(filePath: string, baseDir: string, source: string
  * Discovery rules:
  * - if a directory contains SKILL.md, treat it as a skill root and do not recurse further
  * - otherwise, load direct .md children in the root
- * - recurse into subdirectories to find SKILL.md
+ * - recurse into subdirectories to find SKILL.md, bounded by MAX_SKILL_SCAN_DEPTH
  */
 export function loadSkillsFromDir(options: LoadSkillsFromDirOptions): LoadSkillsResult {
 	const { dir, source } = options;
@@ -253,6 +259,9 @@ function loadSkillsFromDirInternal(
 			}
 
 			if (isDirectory) {
+				if (relPath.split("/").length > MAX_SKILL_SCAN_DEPTH) {
+					continue;
+				}
 				const subResult = loadSkillsFromDirInternal(fullPath, source, false, ig, root);
 				skills.push(...subResult.skills);
 				diagnostics.push(...subResult.diagnostics);
